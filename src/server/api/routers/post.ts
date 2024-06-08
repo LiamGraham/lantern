@@ -1,3 +1,4 @@
+import { randomInt } from "crypto";
 import { z } from "zod";
 
 import {
@@ -10,9 +11,10 @@ import { posts } from "~/server/db/schema";
 export const postRouter = createTRPCRouter({
   hello: publicProcedure
     .input(z.object({ text: z.string() }))
-    .query(({ input }) => {
+    .query(async ({ input }) => {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       return {
-        greeting: `Hello ${input.text}`,
+        greeting: `Hello ${input.text} ${randomInt(0, 100)}`,
       };
     }),
 
