@@ -3,12 +3,12 @@ import React, { useRef, useEffect, useImperativeHandle } from "react";
 import { cn } from "~/lib/utils";
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface DynamicTextareaProps
+export interface ChatInputProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  onEnterPress?: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onEnterPress?: (value: string) => void;
 }
 
-const DynamicTextarea = React.forwardRef<HTMLTextAreaElement, DynamicTextareaProps>(
+const ChatInput = React.forwardRef<HTMLTextAreaElement, ChatInputProps>(
   ({ className, onEnterPress, ...props }, ref) => {
     const internalRef = useRef<HTMLTextAreaElement>(null);
 
@@ -19,15 +19,22 @@ const DynamicTextarea = React.forwardRef<HTMLTextAreaElement, DynamicTextareaPro
       }
     };
 
+    const setText = (value: string) => {
+      if (internalRef.current) {
+        internalRef.current.value = value;
+        handleInput();
+      }
+    }
+
     const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
-        if (onEnterPress) {
-          onEnterPress(event);
+        if (onEnterPress && internalRef.current?.value) {
+          onEnterPress(internalRef.current?.value ?? "");
+          setText("");
         }
       }
     };
-
 
     useEffect(() => {
       handleInput();
@@ -38,11 +45,8 @@ const DynamicTextarea = React.forwardRef<HTMLTextAreaElement, DynamicTextareaPro
       focus() {
         internalRef.current?.focus();
       },
-      setValue(val: string) {
-        if (internalRef.current) {
-          internalRef.current.value = val;
-          handleInput();
-        }
+      setValue(value: string) {
+        setText(value);
       },
     }));
 
@@ -62,6 +66,6 @@ const DynamicTextarea = React.forwardRef<HTMLTextAreaElement, DynamicTextareaPro
   }
 );
 
-DynamicTextarea.displayName = "DynamicTextarea";
+ChatInput.displayName = "ChatInput";
 
-export { DynamicTextarea };
+export { ChatInput };
