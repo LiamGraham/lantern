@@ -18,12 +18,13 @@ local_resource(
   ),
 )
 local_resource(
-  "ollama_start",
-  cmd="ollama run llama3",
+  "ollama",
+  serve_cmd="ollama serve",
   deps=[],
 )
+
 local_resource(
-  "ollama_status",
-  cmd="curl -s {}".format(llama_link),
-  deps=["ollama_start"]
+  "llama3",
+  cmd="ollama run llama3",
+  deps=["ollama"],
 )
