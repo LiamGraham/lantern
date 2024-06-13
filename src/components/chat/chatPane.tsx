@@ -52,7 +52,7 @@ export default function ChatPane() {
   const { formRef, onKeyDown } = useEnterSubmit(!isLoading)
 
   return (
-    <div className="flex flex-col w-1/2 h-full p-4">
+    <div className="flex flex-col w-full lg:w-1/2 h-full p-4">
       <ScrollArea className="flex-1 py-4">
         <div className="flex pr-3 flex-col gap-3">
           <>
