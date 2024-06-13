@@ -1,6 +1,6 @@
 import { useRef, type RefObject } from 'react'
 
-export function useEnterSubmit(): {
+export function useEnterSubmit(condition?: boolean): {
   formRef: RefObject<HTMLFormElement>
   onKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void
 } {
@@ -14,7 +14,9 @@ export function useEnterSubmit(): {
       !event.shiftKey &&
       !event.nativeEvent.isComposing
     ) {
-      formRef.current?.requestSubmit()
+      if (condition) {
+        formRef.current?.requestSubmit()
+      }
       event.preventDefault()
     }
   }
