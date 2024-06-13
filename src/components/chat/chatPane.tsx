@@ -28,9 +28,18 @@ function BotMessage(props: ChatMessageProps) {
   const { className, message } = props;
   const { content } = message;
   return (
-    <div className={`self-start bg-gray-300 max-w-full bg-transparent text-secondary-foreground prose dark:prose-invert items-center rounded-2xl border px-2 py-1 focus:outline-none font-sm border-transparent leading-relaxed whitespace-pre-wrap ${className}`}>
+    <div className={`self-start bg-gray-300 max-w-full bg-transparent text-secondary-foreground prose dark:prose-invert items-center rounded-2xl border px-2 py-1 focus:outline-none font-sm border-transparent leading-relaxed ${className}`}>
       <Markdown
         remarkPlugins={[remarkGfm]}
+        options={{
+          overrides: {
+            code: {
+              props: {
+                className: 'text-wrap', // Ensure overlong code lines wrap correctly
+              },
+            }
+          }
+        }}
       >
         {content}
       </Markdown>
@@ -38,7 +47,7 @@ function BotMessage(props: ChatMessageProps) {
   )
 }
 
-function ErrorMessage(props: { className?: string, children: ReactNode}) {
+function ErrorMessage(props: { className?: string, children: ReactNode }) {
   const { className, children } = props;
   return (
     <div className={`self-end bg-red-900 text-primary-foreground items-center rounded-2xl border px-2 py-1 focus:outline-none font-sm border-transparent leading-relaxed whitespace-pre-wrap ${className}`}>
