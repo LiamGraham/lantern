@@ -7,6 +7,7 @@ import { type Message } from "@ai-sdk/react";
 import Markdown from 'markdown-to-jsx';
 import remarkGfm from 'remark-gfm'
 import { Button } from "../ui/button";
+import { ReactNode } from "react";
 
 interface ChatMessageProps {
   className?: string;
@@ -37,17 +38,29 @@ function BotMessage(props: ChatMessageProps) {
   )
 }
 
+function ErrorMessage(props: { className?: string, children: ReactNode}) {
+  const { className, children } = props;
+  return (
+    <div className={`self-end bg-red-900 text-primary-foreground items-center rounded-2xl border px-2 py-1 focus:outline-none font-sm border-transparent leading-relaxed whitespace-pre-wrap ${className}`}>
+      {children}
+    </div>
+  )
+}
+
 export default function ChatPane() {
-  const { messages, input, isLoading, handleInputChange, handleSubmit } = useChat();
+  const { messages, input, error, isLoading, handleInputChange, handleSubmit } = useChat();
   const { formRef, onKeyDown } = useEnterSubmit(!isLoading)
 
   return (
     <div className="flex flex-col w-1/2 h-full p-4">
       <ScrollArea className="flex-1 py-4">
         <div className="flex pr-3 flex-col gap-3">
-          {messages.map(m => (
-            m.role === 'user' ? <UserMessage key={m.id} message={m} /> : <BotMessage key={m.id} message={m} />
-          ))}
+          <>
+            {messages.map(m => (
+              m.role === 'user' ? <UserMessage key={m.id} message={m} /> : <BotMessage key={m.id} message={m} />
+            ))}
+            {error && <ErrorMessage>An error has occurred. Please try again.</ErrorMessage>}
+          </>
         </div>
       </ScrollArea>
       <form
