@@ -4,20 +4,34 @@ import { useEnterSubmit } from "../../lib/hooks/useEnterSubmit";
 import { useChat } from '@ai-sdk/react';
 import Textarea from 'react-textarea-autosize'
 import { type Message } from "@ai-sdk/react";
-import { type ReactNode } from "react";
+import Markdown from 'markdown-to-jsx';
+import remarkGfm from 'remark-gfm'
 
-interface ChatBubbleProps {
+interface ChatMessageProps {
   className?: string;
-  role: Message['role'];
-  children: ReactNode;
+  message: Message;
 }
 
-function ChatBubble(props: ChatBubbleProps) {
-  const { className, role, children } = props;
-  const senderClass = role === 'user' ? 'self-end max-w-[55%] bg-primary text-primary-foreground' : 'self-start bg-gray-300 max-w-full bg-transparent text-secondary-foreground';
+function UserMessage(props: ChatMessageProps) {
+  const { className, message } = props;
+  const { content } = message;
   return (
-    <div className={`items-center rounded-2xl border px-2 py-1 focus:outline-none font-sm border-transparent leading-relaxed whitespace-pre-wrap ${senderClass} ${className}`}>
-      {children}
+    <div className={`self-end max-w-[55%] bg-primary text-primary-foreground items-center rounded-2xl border px-2 py-1 focus:outline-none font-sm border-transparent leading-relaxed whitespace-pre-wrap ${className}`}>
+      {content}
+    </div>
+  )
+}
+
+function BotMessage(props: ChatMessageProps) {
+  const { className, message } = props;
+  const { content } = message;
+  return (
+    <div className={`self-start bg-gray-300 max-w-full bg-transparent text-secondary-foreground prose dark:prose-invert items-center rounded-2xl border px-2 py-1 focus:outline-none font-sm border-transparent leading-relaxed whitespace-pre-wrap ${className}`}>
+      <Markdown
+        remarkPlugins={[remarkGfm]}
+      >
+        {content}
+      </Markdown>
     </div>
   )
 }
@@ -30,9 +44,7 @@ export default function ChatPane() {
       <ScrollArea className="flex-1 py-4">
         <div className="flex pr-3 flex-col gap-3">
           {messages.map(m => (
-            <ChatBubble key={m.id} role={m.role}>
-              {m.content}
-            </ChatBubble>
+            m.role === 'user' ? <UserMessage key={m.id} message={m}/> : <BotMessage key={m.id} message={m}/>
           ))}
         </div>
       </ScrollArea>

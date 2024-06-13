@@ -1,4 +1,4 @@
-import ChatPane from "../components/chat/chatPane";
+import ChatPane from "~/components/chat/chatPane";
 
 export default async function Home() {
   return (
