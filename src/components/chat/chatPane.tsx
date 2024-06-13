@@ -57,8 +57,14 @@ function ErrorMessage(props: { className?: string, children: ReactNode }) {
 }
 
 export default function ChatPane() {
-  const { messages, input, error, isLoading, handleInputChange, handleSubmit } = useChat();
+  const { messages, input, error, isLoading, stop, handleInputChange, handleSubmit } = useChat();
   const { formRef, onKeyDown } = useEnterSubmit(!isLoading)
+
+  const handleStop = () => {
+    if (isLoading) {
+      stop();
+    }
+  }
 
   return (
     <div className="flex flex-col w-full lg:w-1/2 h-full p-4">
@@ -85,8 +91,8 @@ export default function ChatPane() {
             onKeyDown={onKeyDown}
             rows={1}
           />
-          <Button type='submit' disabled={isLoading} className={`rounded-full w-9 h-9 transition-all`}>
-            ↑
+          <Button type={isLoading ? 'button' : 'submit'} onClick={handleStop} className={`rounded-full w-9 h-9 transition-all`}>
+            {isLoading ? '■' : '↑'}
           </Button>
         </div>
       </form>
