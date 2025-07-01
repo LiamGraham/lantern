@@ -1,34 +1,69 @@
-import { parseQuery } from "./parser";
-import type { Transaction } from "./types";
+import { getApiClient } from '../api/client';
+import { errorMsg } from '../lib/utils';
+import { evaluateQuery, extractDateBounds } from './executor';
+import { parseQuery } from './parser';
+import type { Transaction } from './types';
 
-export interface QueryResult {
+export interface QuerySuccessResult {
+  success: true;
   transactions: Transaction[];
-  executionInfo: {
+  metadata: {
     dateBounds: { since?: string; until?: string };
     totalFetched: number;
     totalFiltered: number;
   };
 }
 
-// Query execution is now handled by server actions
-// This file only contains client-side utilities
+export interface QueryFailureResult {
+  success: false;
+  error: {
+    message: string;
+    statusCode: number;
+  };
+}
 
-/**
- * Validates a query string without executing it
- */
-export function validateQuery(queryString: string): { isValid: boolean; error?: string } {
+export type QueryResult = QuerySuccessResult | QueryFailureResult;
+
+export async function processQuery(queryString: string): Promise<QueryResult> {
   try {
     const ast = parseQuery(queryString);
+
+    if (!ast) {
+      return {
+        success: false,
+        error: {
+          message: 'Failed to parse query',
+          statusCode: 400,
+        },
+      };
+    }
+
+    // Extract date bounds to optimize the API call
+    const dateBounds = extractDateBounds(ast);
+
+    // Create API client and fetch data using date filters to bound the dataset
+    const apiClient = getApiClient();
+    const response = await apiClient.getAllTransactions(dateBounds);
+
+    // Apply the full query logic client-side
+    const filteredTransactions = evaluateQuery(ast, response.data);
+
     return {
-      isValid: ast !== null,
-      error: ast === null ? "Failed to parse query" : undefined,
+      success: true,
+      transactions: filteredTransactions,
+      metadata: {
+        dateBounds,
+        totalFetched: response.data.length,
+        totalFiltered: filteredTransactions.length,
+      },
     };
   } catch (error) {
     return {
-      isValid: false,
-      error: error instanceof Error ? error.message : "Unknown parsing error",
-    };
+      success: false,
+      error: {
+        message: errorMsg(error),
+        statusCode: 500,
+      }
+    }
   }
 }
-
-// planQuery functionality moved to server action

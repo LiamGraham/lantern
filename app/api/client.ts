@@ -1,10 +1,10 @@
-import type { ApiFilters, ListTransactionsResponse } from "../dsl/types";
+import type { ApiFilters, ListTransactionsResponse } from '../dsl/types';
 
 export class UpApiClient {
   private baseUrl: string;
   private apiKey: string;
 
-  constructor(apiKey: string, baseUrl = "https://api.up.com.au/api/v1") {
+  constructor(apiKey: string, baseUrl = 'https://api.up.com.au/api/v1') {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl;
   }
@@ -14,43 +14,45 @@ export class UpApiClient {
    */
   async getTransactions(
     filters: ApiFilters = {},
-    pageSize = 30
+    pageSize = 30,
   ): Promise<ListTransactionsResponse> {
     const url = new URL(`${this.baseUrl}/transactions`);
-    
+
     // Add pagination
-    url.searchParams.set("page[size]", pageSize.toString());
-    
+    url.searchParams.set('page[size]', pageSize.toString());
+
     // Add filters as query parameters
     if (filters.since) {
-      url.searchParams.set("filter[since]", filters.since);
+      url.searchParams.set('filter[since]', filters.since);
     }
-    
+
     if (filters.until) {
-      url.searchParams.set("filter[until]", filters.until);
+      url.searchParams.set('filter[until]', filters.until);
     }
-    
+
     if (filters.status) {
-      url.searchParams.set("filter[status]", filters.status);
+      url.searchParams.set('filter[status]', filters.status);
     }
-    
+
     if (filters.category) {
-      url.searchParams.set("filter[category]", filters.category);
+      url.searchParams.set('filter[category]', filters.category);
     }
-    
+
     if (filters.tag) {
-      url.searchParams.set("filter[tag]", filters.tag);
+      url.searchParams.set('filter[tag]', filters.tag);
     }
 
     const response = await fetch(url.toString(), {
       headers: {
-        "Authorization": `Bearer ${this.apiKey}`,
-        "Accept": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+        Accept: 'application/json',
       },
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`,
+      );
     }
 
     return response.json();
@@ -60,25 +62,27 @@ export class UpApiClient {
    * Fetches all transactions for an account, handling pagination automatically
    */
   async getAllTransactions(
-    filters: ApiFilters = {}
+    filters: ApiFilters = {},
   ): Promise<ListTransactionsResponse> {
-    let allTransactions: ListTransactionsResponse["data"] = [];
+    let allTransactions: ListTransactionsResponse['data'] = [];
     let currentUrl: string | null = null;
     let pageCount = 0;
     const maxPages = 20; // Reasonable limit to prevent excessive API calls
-    
+
     do {
-      const response = currentUrl 
+      const response = currentUrl
         ? await this.fetchPage(currentUrl)
         : await this.getTransactions(filters);
-        
+
       allTransactions = allTransactions.concat(response.data);
       currentUrl = response.links.next;
       pageCount++;
-      
+
       // Safety check to prevent excessive API calls
       if (pageCount >= maxPages) {
-        console.warn(`Reached maximum page limit (${maxPages}). Fetched ${allTransactions.length} transactions.`);
+        console.warn(
+          `Reached maximum page limit (${maxPages}). Fetched ${allTransactions.length} transactions.`,
+        );
         break;
       }
     } while (currentUrl);
@@ -98,13 +102,15 @@ export class UpApiClient {
   private async fetchPage(url: string): Promise<ListTransactionsResponse> {
     const response = await fetch(url, {
       headers: {
-        "Authorization": `Bearer ${this.apiKey}`,
-        "Accept": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+        Accept: 'application/json',
       },
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`,
+      );
     }
 
     return response.json();
@@ -112,12 +118,12 @@ export class UpApiClient {
 }
 
 // Factory function to create API client with environment-based configuration
-export function createApiClient(): UpApiClient {
+export function getApiClient(): UpApiClient {
   const apiKey = process.env.UP_API_KEY;
-  
+
   if (!apiKey) {
-    throw new Error("UP_API_KEY environment variable is required");
+    throw new Error('UP_API_KEY environment variable is required');
   }
-  
+
   return new UpApiClient(apiKey);
 }

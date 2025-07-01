@@ -2,9 +2,9 @@
 
 export interface Transaction {
   id: string;
-  type: "transactions";
+  type: 'transactions';
   attributes: {
-    status: "HELD" | "SETTLED";
+    status: 'HELD' | 'SETTLED';
     rawText: string | null;
     description: string;
     message: string | null;
@@ -21,25 +21,25 @@ export interface Transaction {
   relationships: {
     account: {
       data: {
-        type: "accounts";
+        type: 'accounts';
         id: string;
       };
     };
     category: {
       data: {
-        type: "categories";
+        type: 'categories';
         id: string;
       } | null;
     };
     parentCategory: {
       data: {
-        type: "categories";
+        type: 'categories';
         id: string;
       } | null;
     };
     tags: {
       data: Array<{
-        type: "tags";
+        type: 'tags';
         id: string;
       }>;
     };
@@ -57,8 +57,8 @@ export interface ListTransactionsResponse {
 // API filter parameters that can be passed to the UP API
 export interface ApiFilters {
   since?: string; // ISO date-time
-  until?: string; // ISO date-time  
-  status?: "HELD" | "SETTLED";
+  until?: string; // ISO date-time
+  status?: 'HELD' | 'SETTLED';
   category?: string; // category ID
   tag?: string; // tag name
 }
