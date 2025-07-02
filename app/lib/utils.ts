@@ -68,3 +68,12 @@ export function debounce<T extends (...args: any[]) => any>(
 
   return debounced;
 }
+
+export function toTitleCase(target: string, delim = ' ') {
+  return target.toLowerCase().split(delim).map((word, index, array) => {
+    if (word === 'and' && index !== 0 && index !== array.length - 1) {
+      return word;
+    }
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }).join(' ');
+}

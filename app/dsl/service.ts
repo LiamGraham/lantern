@@ -1,8 +1,8 @@
 import { getApiClient } from '../api/client';
+import type { Transaction } from '../api/types';
 import { errorMsg } from '../lib/utils';
 import { evaluateQuery, extractDateBounds } from './executor';
-import { parseQuery } from './parser';
-import type { Transaction } from './types';
+import { parseQuery, type QueryNode } from './parser';
 
 export interface QuerySuccessResult {
   success: true;

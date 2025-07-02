@@ -1,12 +1,11 @@
-import { useState } from 'react';
-import { useFetcher } from 'react-router';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { Input } from '~/components/ui/input';
-import { validateQuery } from '~/dsl/parser';
+import { type QueryValidation, validateQuery } from '~/dsl/parser';
 import { useDebounceQuery } from '~/hooks';
 import type { Route } from '../+types/root';
-import { processQuery, type QueryResult } from '../dsl/service';
-import type { Transaction } from '../dsl/types';
 import { TransactionTable } from '../components/transactions';
+import { processQuery } from '../dsl/service';
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -43,13 +42,42 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function Dashboard() {
   const [query, setQuery] = useState('');
+  const [validation, setValidation] = useState<QueryValidation>({
+    isValid: true,
+  });
+  const { isExecuting, data, error } = useDebounceQuery(query);
 
-  const { isExecuting, data, error, cancel, flush } = useDebounceQuery(query);
+  useEffect(() => {
+    const {isValid, error} = validateQuery(query)
+    setValidation({
+      isValid: query.length === 0 || isValid,
+      error,
+    })
+  }, [query]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   return (
     <div className="flex flex-1 flex-col p-4 gap-4">
-      <Input onChange={(e) => setQuery(e.target.value)} />
-      <TransactionTable data={data}/>
+      <div className="relative flex flex-row gap-2">
+        <Input
+          placeholder="Filter transactions"
+          className={
+            validation.isValid ? '' : 'decoration-wavy underline decoration-red-400'
+          }
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {validation.error && (
+          <div className="absolute top-full left-0 mt-1 bg-red-900 border px-3 py-1 text-sm rounded-md shadow-lg z-10 max-w-md">
+            {validation.error}
+          </div>
+        )}
+      </div>
+      <TransactionTable data={data} isExecuting={isExecuting} />
     </div>
   );
 }

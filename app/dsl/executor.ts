@@ -1,5 +1,5 @@
+import type { Transaction } from '../api/types';
 import type { FilterNode, QueryNode } from './parser';
-import type { Transaction } from './types';
 
 /**
  * Extracts date bounds from a query AST to use as API filters

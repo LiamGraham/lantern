@@ -25,6 +25,12 @@ export const RangeValue = createToken({
   pattern: /(?:(?:>=|<=|>|<|!=)?\d+(?:\.\d+)?(?:\.\.\d+(?:\.\d+)?)?)/,
 });
 
+// Boolean values: true, false
+export const BooleanValue = createToken({
+  name: 'BOOLEAN_VALUE',
+  pattern: /(?:true|false)/,
+});
+
 // Pattern values: plain strings, wildcards, or quoted strings
 export const PatternValue = createToken({
   name: 'PATTERN_VALUE',
@@ -63,6 +69,7 @@ export const allTokens = [
   DateValue,
   RelativeDateValue,
   RangeValue,
+  BooleanValue, // Boolean values must come before PatternValue
   PatternValue, // Now handles all text patterns including quoted strings
 ];
 

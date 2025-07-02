@@ -1,7 +1,9 @@
 import { type CstNode, CstParser, type IToken } from 'chevrotain';
+import { errorMsg } from '../lib/utils';
 import {
   And,
   allTokens,
+  BooleanValue,
   Colon,
   DateValue,
   Field,
@@ -14,14 +16,13 @@ import {
   RelativeDateValue,
   RParen,
 } from './lexer';
-import { errorMsg } from '../lib/utils';
 
 // AST Node Types
 export interface FilterNode {
   type: 'filter';
   field: string;
   value: string;
-  valueType: 'range' | 'pattern' | 'date' | 'relativeDate';
+  valueType: 'range' | 'pattern' | 'date' | 'relativeDate' | 'boolean';
   negated: boolean;
 }
 
@@ -32,6 +33,11 @@ export interface BinaryOpNode {
   right: QueryNode;
   negated: boolean;
 }
+
+export type QueryValidation = {
+  isValid: boolean;
+  error?: string;
+};
 
 export type QueryNode = FilterNode | BinaryOpNode;
 
@@ -101,6 +107,7 @@ class DSLParser extends CstParser {
       { ALT: () => this.CONSUME(RangeValue) },
       { ALT: () => this.CONSUME(DateValue) },
       { ALT: () => this.CONSUME(RelativeDateValue) },
+      { ALT: () => this.CONSUME(BooleanValue) },
       { ALT: () => this.CONSUME(PatternValue) },
     ]);
   });
@@ -206,7 +213,7 @@ class DSLInterpreter {
     const field = (cstNode.children.FIELD[0] as IToken).image;
 
     let value: string;
-    let valueType: 'range' | 'pattern' | 'date' | 'relativeDate';
+    let valueType: 'range' | 'pattern' | 'date' | 'relativeDate' | 'boolean';
 
     if (cstNode.children.RANGE_VALUE) {
       value = (cstNode.children.RANGE_VALUE[0] as IToken).image;
@@ -217,6 +224,9 @@ class DSLInterpreter {
     } else if (cstNode.children.RELATIVE_DATE_VALUE) {
       value = (cstNode.children.RELATIVE_DATE_VALUE[0] as IToken).image;
       valueType = 'relativeDate';
+    } else if (cstNode.children.BOOLEAN_VALUE) {
+      value = (cstNode.children.BOOLEAN_VALUE[0] as IToken).image;
+      valueType = 'boolean';
     } else {
       value = (cstNode.children.PATTERN_VALUE[0] as IToken).image;
       valueType = 'pattern';
@@ -233,6 +243,42 @@ class DSLInterpreter {
 }
 
 export const interpreter = new DSLInterpreter();
+
+// Field-value type validation rules
+const FIELD_VALUE_RULES = {
+  since: ['date', 'relativeDate'],
+  until: ['date', 'relativeDate'],
+  amount: ['range'],
+  status: ['pattern'],
+  category: ['pattern'],
+  description: ['pattern'],
+  account: ['pattern'],
+  type: ['pattern'],
+  credit: ['boolean'],
+  debit: ['boolean'],
+} as const;
+
+/**
+ * Validates the semantic correctness of an AST node
+ */
+function validateAST(node: QueryNode): string | null {
+  if (node.type === 'filter') {
+    const allowedTypes =
+      FIELD_VALUE_RULES[node.field as keyof typeof FIELD_VALUE_RULES];
+    const isAllowed = allowedTypes?.includes(node.valueType) ?? false;
+    if (!isAllowed) {
+      const formattedTypes =
+        allowedTypes.length === 1
+          ? allowedTypes[0]
+          : `${allowedTypes.slice(0, -1).join(',')} or ${allowedTypes.at(-1)}`;
+      return `Filter '${node.field}' must use ${formattedTypes} value, not ${node.valueType}`;
+    }
+  } else if (node.type === 'binaryOp') {
+    return validateAST(node.left) || validateAST(node.right);
+  }
+
+  return null;
+}
 
 export function parseQuery(queryString: string): QueryNode | null {
   const lexingResult = lexer.tokenize(queryString);
@@ -256,21 +302,23 @@ export function parseQuery(queryString: string): QueryNode | null {
 /**
  * Validates a query string without executing it
  */
-export function validateQuery(queryString: string): {
-  isValid: boolean;
-  error?: string;
-} {
+export function validateQuery(queryString: string): QueryValidation {
   try {
     const ast = parseQuery(queryString);
-    const isValid = ast !== null;
-    return {
-      isValid,
-      error: isValid ? 'Failed to parse query' : undefined,
-    };
+    if (!ast) {
+      return { isValid: false };
+    }
+
+    const semanticError = validateAST(ast);
+    if (semanticError) {
+      return { isValid: false, error: semanticError };
+    }
+
+    return { isValid: true };
   } catch (error) {
     return {
       isValid: false,
-      error: errorMsg(error)
+      error: errorMsg(error),
     };
   }
 }

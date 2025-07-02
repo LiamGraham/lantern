@@ -1,4 +1,4 @@
-import type { ApiFilters, ListTransactionsResponse } from '../dsl/types';
+import type { ApiFilters, ListTransactionsResponse } from './types';
 
 export class UpApiClient {
   private baseUrl: string;

@@ -21,12 +21,16 @@ interface DataTablePaginationProps<TData> {
 export function DataTablePagination<TData>({
   table,
 }: DataTablePaginationProps<TData>) {
+  const pageIndex = table.getState().pagination.pageIndex
+  const pageSize = table.getState().pagination.pageSize
+  const pageOffset = pageIndex * pageSize
+  const pageRowCount = table.getPaginationRowModel().rows.length
   return (
-    <div className="flex items-center justify-end px-2">
-      {/* <div className="text-muted-foreground flex-1 text-sm">
-        {table.getFilteredSelectedRowModel().rows.length} of{" "}
-        {table.getFilteredRowModel().rows.length} row(s) selected.
-      </div> */}
+    <div className="flex items-center justify-end px-2 py-1">
+      <div className="text-muted-foreground flex-1 text-sm">
+        {pageRowCount > 0 ? pageOffset + 1 : 0}–{pageOffset + pageRowCount} of{" "}
+        {table.getFilteredRowModel().rows.length} rows
+      </div>
       <div className="flex items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">Rows per page</p>
