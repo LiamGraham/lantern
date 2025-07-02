@@ -4,7 +4,7 @@ import { validateQuery } from '~/dsl/parser';
 import { debounce } from '~/lib/utils';
 import type { QueryResult } from '../dsl/service';
 
-export function useDebounceQuery(query: string, delay = 300) {
+export function useDebounceQuery(query: string, delay = 500) {
   const fetcher = useFetcher();
 
   const debouncedExecuteQuery = useCallback(

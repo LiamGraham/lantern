@@ -1,8 +1,7 @@
-import type { Column, ColumnDef } from '@tanstack/react-table';
+import type { Cell, Column, ColumnDef } from '@tanstack/react-table';
 import { ArrowUpDown, Loader2Icon } from 'lucide-react';
-import type { Transaction } from '../api/types';
+import { categoryLookup, type Transaction } from '../api/types';
 import type { QueryResult } from '../dsl/service';
-import { toTitleCase } from '../lib/utils';
 import { Button } from './ui/button';
 import { DataTable } from './ui/data-table';
 
@@ -21,6 +20,24 @@ function SortableHeader({ column, title }: SortableHeaderProps) {
       {title}
       <ArrowUpDown className="ml-2 h-4 w-4" />
     </Button>
+  );
+}
+
+interface CategoryCellProps {
+  cell: Cell<Transaction, unknown>
+}
+
+function CategoryCell({ cell }: CategoryCellProps) {
+  const value = cell.getValue() as keyof typeof categoryLookup;
+  const category = categoryLookup[value];
+  const formatted = value ? category : 'None';
+  return (
+    <div
+      className={`truncate ${!value ? 'text-neutral-400' : ''}`}
+      title={value}
+    >
+      {formatted}
+    </div>
   );
 }
 
@@ -58,10 +75,13 @@ const columns: ColumnDef<Transaction>[] = [
   },
   {
     accessorKey: 'relationships.category.data.id',
-    header: ({ column }) => <SortableHeader column={column} title="Category" />,
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Sub-Category" />
+    ),
     cell: ({ cell }) => {
-      const value = cell.getValue() as string;
-      const formatted = value ? toTitleCase(value, '-') : 'None';
+      const value = cell.getValue() as keyof typeof categoryLookup;
+      const category = categoryLookup[value];
+      const formatted = value ? category : 'None';
       return (
         <div
           className={`truncate ${!value ? 'text-neutral-400' : ''}`}
@@ -71,6 +91,11 @@ const columns: ColumnDef<Transaction>[] = [
         </div>
       );
     },
+  },
+  {
+    accessorKey: 'relationships.parentCategory.data.id',
+    header: ({ column }) => <SortableHeader column={column} title="Category" />,
+    cell: ({ cell }) => <CategoryCell cell={cell}/>
   },
   {
     accessorKey: 'attributes.amount.valueInBaseUnits',
