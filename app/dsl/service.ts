@@ -1,8 +1,20 @@
 import { getApiClient } from '../api/client';
-import type { Transaction } from '../api/types';
+import type { CategoryId, RawTransaction } from '../api/types';
 import { errorMsg } from '../lib/utils';
 import { evaluateQuery, extractDateBounds } from './executor';
-import { parseQuery, type QueryNode } from './parser';
+import { parseQuery } from './parser';
+
+export interface Transaction {
+  id: string;
+  status: RawTransaction['attributes']['status'];
+  description: string;
+  amount: number;
+  createdAt: Date;
+  type: string | null;
+  accountId: string;
+  categoryId: CategoryId;
+  parentCategoryId: CategoryId;
+}
 
 export interface QuerySuccessResult {
   success: true;
@@ -23,6 +35,20 @@ export interface QueryFailureResult {
 }
 
 export type QueryResult = QuerySuccessResult | QueryFailureResult;
+
+function transformTransaction(target: RawTransaction): Transaction {
+  return {
+    id: target.id,
+    status: target.attributes.status,
+    description: target.attributes.description,
+    amount: target.attributes.amount.valueInBaseUnits / 100,
+    createdAt: new Date(target.attributes.createdAt),
+    type: target.attributes.transactionType,
+    accountId: target.relationships.account.data.id,
+    categoryId: target.relationships.category.data?.id as CategoryId,
+    parentCategoryId: target.relationships.parentCategory.data?.id as CategoryId,
+  };
+}
 
 export async function processQuery(queryString: string): Promise<QueryResult> {
   try {
@@ -46,15 +72,17 @@ export async function processQuery(queryString: string): Promise<QueryResult> {
     const response = await apiClient.getAllTransactions(dateBounds);
 
     // Apply the full query logic client-side
-    const filteredTransactions = evaluateQuery(ast, response.data);
+    const transactions = evaluateQuery(ast, response.data)
+      .reverse()
+      .map(transformTransaction);
 
     return {
       success: true,
-      transactions: filteredTransactions,
+      transactions,
       metadata: {
         dateBounds,
         totalFetched: response.data.length,
-        totalFiltered: filteredTransactions.length,
+        totalFiltered: transactions.length,
       },
     };
   } catch (error) {
@@ -63,7 +91,7 @@ export async function processQuery(queryString: string): Promise<QueryResult> {
       error: {
         message: errorMsg(error),
         statusCode: 500,
-      }
-    }
+      },
+    };
   }
 }

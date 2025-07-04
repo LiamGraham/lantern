@@ -1,8 +1,8 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -25,7 +25,7 @@ export function errorMsg(error: unknown) {
  */
 export function debounce<T extends (...args: any[]) => any>(
   fn: T,
-  delay: number
+  delay: number,
 ): T & {
   cancel: () => void;
   flush: () => void;
@@ -35,11 +35,11 @@ export function debounce<T extends (...args: any[]) => any>(
 
   const debounced = ((...args: Parameters<T>) => {
     lastArgs = args;
-    
+
     if (timeoutId !== null) {
       clearTimeout(timeoutId);
     }
-    
+
     timeoutId = setTimeout(() => {
       timeoutId = null;
       if (lastArgs !== null) {

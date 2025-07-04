@@ -1,11 +1,13 @@
+import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Input } from '~/components/ui/input';
 import { type QueryValidation, validateQuery } from '~/dsl/parser';
 import { useDebounceQuery } from '~/hooks';
 import type { Route } from '../+types/root';
+import { BarGraph } from '../components/charts/bar-graph';
 import { TransactionTable } from '../components/transactions';
-import { processQuery } from '../dsl/service';
+import { processQuery, type QueryFailureResult } from '../dsl/service';
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -23,16 +25,24 @@ export async function action({ request }: Route.ActionArgs) {
   const queryString = formData.get('query') as string;
 
   if (!queryString) {
-    return Response.json({ error: 'Query is required' }, { status: 400 });
+    const response: QueryFailureResult  = {
+      success: false,
+      error: {
+        message: 'Query is required',
+        statusCode: 400,
+      }
+    }
+    return Response.json(
+      response,
+      { status: response.error.statusCode },
+    );
   }
 
   const queryResult = await processQuery(queryString);
 
   if (!queryResult.success) {
     return Response.json(
-      {
-        error: queryResult.error.message,
-      },
+      queryResult,
       { status: queryResult.error.statusCode },
     );
   }
@@ -48,11 +58,11 @@ export default function Dashboard() {
   const { isExecuting, data, error } = useDebounceQuery(query);
 
   useEffect(() => {
-    const {isValid, error} = validateQuery(query)
+    const { isValid, error } = validateQuery(query);
     setValidation({
       isValid: query.length === 0 || isValid,
       error,
-    })
+    });
   }, [query]);
 
   useEffect(() => {
@@ -62,13 +72,15 @@ export default function Dashboard() {
   }, [error]);
 
   return (
-    <div className="flex flex-1 flex-col p-4 gap-4">
-      <div className="relative flex flex-row gap-2">
+    <div className="flex flex-1 flex-col p-4 gap-4 h-screen overflow-hidden">
+      <div className="relative flex flex-row gap-2 flex-shrink-0">
         <Input
           placeholder="Filter transactions"
-          className={
-            validation.isValid ? '' : 'decoration-wavy underline decoration-red-400'
-          }
+          className={clsx(
+            'text-xl! min-h-12',
+            !validation.isValid &&
+              'decoration-wavy underline decoration-red-400',
+          )}
           onChange={(e) => setQuery(e.target.value)}
         />
         {validation.error && (
@@ -77,7 +89,18 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-      <TransactionTable data={data} isExecuting={isExecuting} />
+
+      <div className="flex flex-row gap-4 flex-1 min-h-0">
+        <TransactionTable
+          data={data}
+          isExecuting={isExecuting}
+          className="w-3/5 flex-shrink-0"
+        />
+
+        <div className="flex-1 min-w-0 border rounded-md p-3">
+          <BarGraph data={data} />
+        </div>
+      </div>
     </div>
   );
 }

@@ -50,7 +50,6 @@ export async function action({ request }: Route.ActionArgs) {
       },
     });
   } catch (error) {
-    console.error('Query execution error:', error);
     return Response.json(
       {
         error:

@@ -1,4 +1,4 @@
-import type { Transaction } from '../api/types';
+import type { RawTransaction } from '../api/types';
 import type { FilterNode, QueryNode } from './parser';
 
 /**
@@ -55,15 +55,15 @@ export function extractDateBounds(ast: QueryNode): {
  */
 export function evaluateQuery(
   ast: QueryNode,
-  transactions: Transaction[],
-): Transaction[] {
+  transactions: RawTransaction[],
+): RawTransaction[] {
   return transactions.filter((transaction) => evaluateNode(ast, transaction));
 }
 
 /**
  * Evaluates a single AST node against a transaction
  */
-function evaluateNode(node: QueryNode, transaction: Transaction): boolean {
+function evaluateNode(node: QueryNode, transaction: RawTransaction): boolean {
   if (node.type === 'filter') {
     return evaluateFilter(node, transaction);
   } else if (node.type === 'binaryOp') {
@@ -87,7 +87,7 @@ function evaluateNode(node: QueryNode, transaction: Transaction): boolean {
 /**
  * Evaluates a single filter against a transaction
  */
-function evaluateFilter(filter: FilterNode, transaction: Transaction): boolean {
+function evaluateFilter(filter: FilterNode, transaction: RawTransaction): boolean {
   let result: boolean;
 
   switch (filter.field) {
@@ -156,7 +156,7 @@ function evaluateFilter(filter: FilterNode, transaction: Transaction): boolean {
  */
 function evaluateDateFilter(
   filter: FilterNode,
-  transaction: Transaction,
+  transaction: RawTransaction,
 ): boolean {
   const dateType = filter.field;
   const filterDate = convertToDate(filter.value, filter.valueType);
@@ -178,7 +178,7 @@ function evaluateDateFilter(
  */
 function evaluateAmountFilter(
   filter: FilterNode,
-  transaction: Transaction,
+  transaction: RawTransaction,
 ): boolean {
   const amount = Math.abs(transaction.attributes.amount.valueInBaseUnits / 100);
   const value = filter.value;
@@ -241,7 +241,7 @@ function evaluatePatternFilter(pattern: string, text: string): boolean {
  */
 function evaluateAmountSignFilter(
   filter: FilterNode,
-  transaction: Transaction,
+  transaction: RawTransaction,
 ): boolean {
   const requestedValue = filter.value.toLowerCase();
   const isPositive = transaction.attributes.amount.valueInBaseUnits > 0;

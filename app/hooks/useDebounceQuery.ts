@@ -1,8 +1,32 @@
 import { useCallback, useEffect } from 'react';
-import { useFetcher } from 'react-router';
+import { type FetcherWithComponents, useFetcher } from 'react-router';
 import { validateQuery } from '~/dsl/parser';
 import { debounce } from '~/lib/utils';
-import type { QueryResult } from '../dsl/service';
+import type { Serialized } from '../api/types';
+import type { QueryResult, Transaction } from '../dsl/service';
+
+function deserializeQueryResult(result: FetcherWithComponents<Serialized<QueryResult>>['data']): QueryResult {
+  if (!result) {
+    return {
+      success: false,
+      error: {
+        message: 'Unknown error',
+        statusCode: 500,
+      }
+    };
+  }
+  if (!result.success) {
+    return result
+  }
+
+  return {
+    ...result,
+    transactions: result.transactions.map((serialised: Serialized<Transaction>): Transaction => ({
+      ...serialised,
+      createdAt: new Date(serialised.createdAt),
+    })),
+  };
+}
 
 export function useDebounceQuery(query: string, delay = 500) {
   const fetcher = useFetcher();
@@ -24,10 +48,12 @@ export function useDebounceQuery(query: string, delay = 500) {
     return () => debouncedExecuteQuery.cancel();
   }, [query, debouncedExecuteQuery]);
   
+  const data = deserializeQueryResult(fetcher.data)
+  
   return {
     isExecuting: fetcher.state === 'submitting',
-    data: fetcher.data as QueryResult,
-    error: fetcher.data?.error,
+    data: data.success ? data : undefined,
+    error: !data.success ? data.error.message : undefined,
     cancel: debouncedExecuteQuery.cancel,
     flush: debouncedExecuteQuery.flush,
   };

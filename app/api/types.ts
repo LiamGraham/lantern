@@ -1,4 +1,4 @@
-export interface Transaction {
+export interface RawTransaction {
   id: string;
   type: 'transactions';
   attributes: {
@@ -44,8 +44,18 @@ export interface Transaction {
   };
 }
 
+export type Serialized<T> = T extends Date
+  ? string
+  : T extends Set<infer U>
+  ? U[]
+  : T extends Map<infer K, infer V>
+  ? Record<string, V>
+  : T extends object
+  ? { [K in keyof T]: Serialized<T[K]> }
+  : T;
+
 export interface ListTransactionsResponse {
-  data: Transaction[];
+  data: RawTransaction[];
   links: {
     prev: string | null;
     next: string | null;
@@ -61,7 +71,7 @@ export interface ApiFilters {
   tag?: string; // tag name
 }
 
-export const categoryLookup = {
+export const CATEGORY_LOOKUP = {
   'games-and-software': 'Apps, Games & Software',
   'car-insurance-and-maintenance': 'Car Insurance, Rego & Maintenance',
   family: 'Children & Family',
@@ -107,3 +117,5 @@ export const categoryLookup = {
   adult: 'Adult',
   technology: 'Technology',
 } as const;
+
+export type CategoryId = keyof typeof CATEGORY_LOOKUP

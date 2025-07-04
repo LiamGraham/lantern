@@ -284,7 +284,6 @@ export function parseQuery(queryString: string): QueryNode | null {
   const lexingResult = lexer.tokenize(queryString);
 
   if (lexingResult.errors.length > 0) {
-    console.error('Lexing errors:', lexingResult.errors);
     return null;
   }
 
@@ -292,7 +291,6 @@ export function parseQuery(queryString: string): QueryNode | null {
   const cst = parser.query();
 
   if (parser.errors.length > 0) {
-    console.error('Parsing errors:', parser.errors);
     return null;
   }
 

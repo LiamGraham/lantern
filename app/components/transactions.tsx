@@ -1,7 +1,8 @@
 import type { Cell, Column, ColumnDef } from '@tanstack/react-table';
+import clsx from 'clsx';
 import { ArrowUpDown, Loader2Icon } from 'lucide-react';
-import { categoryLookup, type Transaction } from '../api/types';
-import type { QueryResult } from '../dsl/service';
+import { CATEGORY_LOOKUP, type RawTransaction } from '../api/types';
+import type { QueryResult, QuerySuccessResult, Transaction } from '../dsl/service';
 import { Button } from './ui/button';
 import { DataTable } from './ui/data-table';
 
@@ -24,12 +25,12 @@ function SortableHeader({ column, title }: SortableHeaderProps) {
 }
 
 interface CategoryCellProps {
-  cell: Cell<Transaction, unknown>
+  cell: Cell<Transaction, unknown>;
 }
 
 function CategoryCell({ cell }: CategoryCellProps) {
-  const value = cell.getValue() as keyof typeof categoryLookup;
-  const category = categoryLookup[value];
+  const value = cell.getValue() as keyof typeof CATEGORY_LOOKUP;
+  const category = CATEGORY_LOOKUP[value];
   const formatted = value ? category : 'None';
   return (
     <div
@@ -43,18 +44,19 @@ function CategoryCell({ cell }: CategoryCellProps) {
 
 const columns: ColumnDef<Transaction>[] = [
   {
-    accessorKey: 'attributes.createdAt',
+    accessorKey: 'createdAt',
     header: ({ column }) => <SortableHeader column={column} title="Date" />,
     cell: ({ cell }) => {
-      const date = new Date(cell.getValue() as string);
+      const date = cell.getValue<Date>()
       const formattedDate = date.toLocaleDateString('en-AU', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       });
       const formattedTime = date.toLocaleTimeString();
+      const fullText = `${formattedDate} ${formattedTime}`;
       return (
-        <div className="whitespace-nowrap max-w-[100px]">
+        <div className="" title={fullText}>
           <span>{formattedDate}</span>{' '}
           <span className="text-neutral-400">{formattedTime}</span>
         </div>
@@ -63,7 +65,7 @@ const columns: ColumnDef<Transaction>[] = [
     enableSorting: true,
   },
   {
-    accessorKey: 'attributes.description',
+    accessorKey: 'description',
     header: ({ column }) => (
       <SortableHeader column={column} title="Description" />
     ),
@@ -74,36 +76,24 @@ const columns: ColumnDef<Transaction>[] = [
     ),
   },
   {
-    accessorKey: 'relationships.category.data.id',
+    accessorKey: 'categoryId',
     header: ({ column }) => (
-      <SortableHeader column={column} title="Sub-Category" />
+      <SortableHeader column={column} title="Category" />
     ),
-    cell: ({ cell }) => {
-      const value = cell.getValue() as keyof typeof categoryLookup;
-      const category = categoryLookup[value];
-      const formatted = value ? category : 'None';
-      return (
-        <div
-          className={`truncate ${!value ? 'text-neutral-400' : ''}`}
-          title={value}
-        >
-          {formatted}
-        </div>
-      );
-    },
+    cell: ({ cell }) => <CategoryCell cell={cell} />,
   },
+  // {
+  //   accessorKey: 'relationships.parentCategory.data.id',
+  //   header: ({ column }) => <SortableHeader column={column} title="Category" />,
+  //   cell: ({ cell }) => <CategoryCell cell={cell} />,
+  // },
   {
-    accessorKey: 'relationships.parentCategory.data.id',
-    header: ({ column }) => <SortableHeader column={column} title="Category" />,
-    cell: ({ cell }) => <CategoryCell cell={cell}/>
-  },
-  {
-    accessorKey: 'attributes.amount.valueInBaseUnits',
+    accessorKey: 'amount',
     header: ({ column }) => <SortableHeader column={column} title="Amount" />,
     cell: ({ cell }) => {
       const value = cell.getValue() as number;
       const isDebit = value < 0;
-      const amount = Math.abs(value) / 100;
+      const amount = Math.abs(value);
       const formatted = `${isDebit ? '-' : '+'}$${amount}`;
       return (
         <div
@@ -115,7 +105,7 @@ const columns: ColumnDef<Transaction>[] = [
     },
   },
   {
-    accessorKey: 'attributes.transactionType',
+    accessorKey: 'type',
     header: ({ column }) => <SortableHeader column={column} title="Type" />,
     cell: ({ cell }) => {
       const value = cell.getValue() as string;
@@ -129,18 +119,20 @@ const columns: ColumnDef<Transaction>[] = [
 ];
 
 interface TransactionTableProps {
-  data: QueryResult | null;
+  className?: string;
+  data?: QuerySuccessResult;
   isExecuting?: boolean;
 }
 
 export function TransactionTable({
   data,
   isExecuting = false,
+  className,
 }: TransactionTableProps) {
-  const transactions = data?.success ? data.transactions : [];
+  const transactions = data?.transactions || [];
 
   return (
-    <div className="relative">
+    <div className={clsx('relative', className)}>
       <DataTable
         columns={columns}
         data={transactions}
